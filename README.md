@@ -10,5 +10,7 @@ Atlas instructions:
 5. Connect to heroku
 6. Config Vars: add Config Var - MONGOLAB_URI_MEDICAL (from .env)
 
+npm install chai chai-http mocha sinon request lodash --save-dev  (npm run test)
+
 
 

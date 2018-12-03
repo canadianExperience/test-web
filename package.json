@@ -15,9 +15,18 @@
     "private": true,
     "main": "index.js",
     "scripts": {
-        "start": "node index.js"
+        "start": "node index.js",
+        "test": "./node_modules/.bin/mocha -R list"
     },
     "engines": {
         "node": "10.10.0"
+    },
+    "devDependencies": {
+        "chai": "^4.2.0",
+        "chai-http": "^4.2.0",
+        "lodash": "^4.17.11",
+        "mocha": "^5.2.0",
+        "request": "^2.88.0",
+        "sinon": "^7.1.1"
     }
 }

@@ -171,6 +171,28 @@ server.get('/patients/:id/records', function (req, res, next) {
   })
 })
 
+//* Get doctor login page
+
+server.get('/login/:doctor_login/:doctor_password', function (req, res, next) {
+  MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
+    if (err) throw err;
+    var dbo = db.db("medical");
+    var name_login = 'doctor_login';
+    var name_password = 'doctor_password';
+    var value_login = req.params.doctor_login;
+    var value_password = req.params.doctor_password;
+    var query = {};
+    query[name_login] = value_login;
+    query[name_password] = value_password;
+    dbo.collection("doctors").findOne(query, function (err, result) {
+      if (err) throw err;
+      console.log(JSON.stringify(result));
+      res.status(200).send(result);
+      db.close();
+    });
+  })
+})
+
 //Get all records in the system
 
 server.get('/records', function (req, res, next) {
@@ -185,6 +207,81 @@ server.get('/records', function (req, res, next) {
     });
   })
 })
+
+//* POST - create new record for a patient by patient id and record type
+
+server.post('/patients/:id/recordType/:recordType',
+  [
+    check('recordValue').isLength({ min: 2 }).withMessage('recordValue must be at least 2 chars long'),
+    check('recordUom').isLength({ min: 2 }).withMessage('recordUom must be at least 2 chars long')
+  ],
+  function (req, res, next) {
+    console.log("START POST RECORD__________________________");
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log(errors.array());
+      return res.status(422).json({ errors: errors.array() });
+    }
+    var isCritical = getCritical(req.params.recordType, req.body.recordValue);
+    var recordDate = new Date().toISOString();
+    var recordType = decodeURI(req.params.recordType);
+    console.log(recordType);
+    console.log(recordDate);
+    var newRecord = {
+      patient_id: ObjectId(req.params.id),
+      recordType: recordType,
+      recordValue: req.body.recordValue,
+      recordUom: req.body.recordUom,
+      isCritical: Boolean(isCritical),
+      recordDate: recordDate
+    }
+    console.log("------------------------- " + isCritical);
+    var newRecordJSON = JSON.stringify(newRecord);
+    console.log(newRecordJSON);
+    MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
+      if (err) 
+      {
+        console.log(err);
+        throw err;
+      }
+      var dbo = db.db("medical");
+      dbo.collection("records").insertOne(newRecord, function (err, res2) {
+        if (err) 
+        {
+          console.log(err);
+          throw err;
+        }
+        console.log("record inserted");
+        console.log(JSON.stringify(res2));
+        var name1 = 'patient_id';
+        var value1 = ObjectId(req.params.id);
+        var name2 = 'recordType';
+        var value2 = req.params.recordType;
+        var name3 = 'recordUom';
+        var value3 = req.body.recordUom;
+        var name4 = 'isCritical';
+        var value4 = Boolean(isCritical);
+        var name5 = 'recordDate';
+        var value5 = recordDate;
+        var query = {};
+        query[name1] = value1;
+        query[name2] = value2;
+        query[name3] = value3;
+        query[name4] = value4;
+        query[name5] = value5;
+        dbo.collection("records").findOne(query, function (err, result) {
+          if (err) 
+          {
+            console.log(err);
+            throw err;
+          }
+          console.log(JSON.stringify(newRecord));
+          res.status(201).send(newRecord);
+          db.close();
+        });
+      });
+    })
+  });
 
 //* POST - create a new patient
 
@@ -249,6 +346,7 @@ server.post('/doctors',
 function (req, res, next) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log(errors.array());
     return res.status(422).json({ errors: errors.array() });
   }
   var newDoctor = {
@@ -262,12 +360,20 @@ function (req, res, next) {
     doctor_password:req.body.doctor_password
   }
   MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
-    if (err) throw err;
+    if (err) 
+    {
+      console.log(err);
+      throw err;
+    }
     var dbo = db.db("medical");
 
 console.log(newDoctor.doctor_login);
     dbo.collection("doctors").findOne({doctor_login: newDoctor.doctor_login}, function (err, result) {
-      if (err) throw err;
+      if (err) 
+      {
+        console.log(err);
+        throw err;
+      }
       if(result != null){
         res.status(400);
         res.send('Doctor login already exists');
@@ -284,62 +390,7 @@ console.log(newDoctor.doctor_login);
   })
 })
 
-//* POST - create new record for a patient by patient id and record type
 
-server.post('/patients/:id/recordType/:recordType',
-  [
-    check('recordValue').isLength({ min: 2 }).withMessage('recordValue must be at least 2 chars long'),
-    check('recordUom').isLength({ min: 2 }).withMessage('recordUom must be at least 2 chars long')
-  ],
-  function (req, res, next) {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(422).json({ errors: errors.array() });
-    }
-    var isCritical = getCritical(req.params.recordType, req.body.recordValue);
-    var recordDate = new Date().toLocaleString();
-    var newRecord = {
-      patient_id: ObjectId(req.params.id),
-      recordType: req.params.recordType,
-      recordValue: req.body.recordValue,
-      recordUom: req.body.recordUom,
-      isCritical: Boolean(isCritical),
-      recordDate: Date(recordDate)
-    }
-    console.log("------------------------- " + isCritical);
-    var newRecordJSON = JSON.stringify(newRecord);
-    MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
-      if (err) throw err;
-      var dbo = db.db("medical");
-      dbo.collection("records").insertOne(newRecord, function (err, res2) {
-        if (err) throw err;
-        console.log("record inserted");
-        console.log(JSON.stringify(res2));
-        var name1 = 'patient_id';
-        var value1 = ObjectId(req.params.id);
-        var name2 = 'recordType';
-        var value2 = req.params.recordType;
-        var name3 = 'recordUom';
-        var value3 = req.body.recordUom;
-        var name4 = 'isCritical';
-        var value4 = Boolean(isCritical);
-        var name5 = 'recordDate';
-        var value5 = Date(recordDate);
-        var query = {};
-        query[name1] = value1;
-        query[name2] = value2;
-        query[name3] = value3;
-        query[name4] = value4;
-        query[name5] = value5;
-        dbo.collection("records").findOne(query, function (err, result) {
-          if (err) throw err;
-          console.log(JSON.stringify(newRecord));
-          res.status(201).send(newRecord);
-          db.close();
-        });
-      });
-    })
-  });
 
 // Delete all patients and their records
 
@@ -459,17 +510,19 @@ server.delete('/records/:id', function (req, res, next) {
 // Update a patient by their id
 
 server.put('/patients/:id',
-  [
-    check('patient_firstName').isAlpha().isLength({ min: 2 }).withMessage('patient_firstName must be at least 2 chars long and contain letters only'),
-    check('patient_lastName').isAlpha().isLength({ min: 2 }).withMessage('patient_lastName must be at least 2 chars long and contain letters only'),
-    check('patient_dateOfBirth').isISO8601().withMessage('patient_dateOfBirth must be in date format YYYY-MM-DD'),
-    check('patient_gender').isIn(['male', 'female']).withMessage('patient_gender must be male or female'),
-    check('patient_address').isLength({ min: 2 }).withMessage('patient_address must be at least 2 chars long'),
-    check('patient_city').isAlpha().isLength({ min: 2 }).withMessage('patient_city must be at least 2 chars long and contain letters only'),
-    check('patient_province').isAlpha().isLength({ min: 2 }).withMessage('patient_province must be at least 2 chars long and contain letters only'),
-    check('patient_postalCode').matches(/^[A-Za-z][0-9][A-Za-z][ -]?[0-9][A-Za-z][0-9]$/).withMessage('patient_postalCode must be provided'),
-    check('doctor').isLength({ min: 2 }).withMessage('patient_province must be at least 2 chars long')
-  ],
+[
+  check('patient_firstName').isAlpha().isLength({ min: 2 }).withMessage('patient_firstName must be at least 2 chars long and contain letters only'),
+  check('patient_lastName').isAlpha().isLength({ min: 2 }).withMessage('patient_lastName must be at least 2 chars long and contain letters only'),
+  check('patient_dateOfBirth').isISO8601().withMessage('patient_dateOfBirth must be in date format YYYY-MM-DD'),
+  check('patient_gender').isIn(['male', 'female']).withMessage('patient_gender must be male or female'),
+  check('patient_address').isLength({ min: 2 }).withMessage('patient_address must be at least 2 chars long'),
+  check('patient_city').isAlpha().isLength({ min: 2 }).withMessage('patient_city must be at least 2 chars long and contain letters only'),
+  check('patient_province').isAlpha().isLength({ min: 2 }).withMessage('patient_province must be at least 2 chars long and contain letters only'),
+  check('patient_postalCode').matches(/^[A-Za-z][0-9][A-Za-z][ -]?[0-9][A-Za-z][0-9]$/).withMessage('patient_postalCode must be provided'),
+  check('patient_e_mail').isLength({ min: 2 }).withMessage('patient_e_mail must be at least 2 chars long'),
+  check('patient_phoneNumber').isLength({ min: 2 }).withMessage('patient_phoneNumber must be at least 2 chars long'),
+  check('patient_doctorID').isLength({ min: 2 }).withMessage('patient_doctorID must be at least 2 chars long'),
+],
   function (req, res, next) {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -484,7 +537,9 @@ server.put('/patients/:id',
       patient_city: req.body.patient_city,
       patient_province: req.body.patient_province,
       patient_postalCode: req.body.patient_postalCode,
-      doctor: req.body.doctor
+      patient_e_mail: req.body.patient_e_mail,
+      patient_phoneNumber: req.body.patient_phoneNumber,
+      patient_doctorID: req.body.patient_doctorID
     }
     MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
       if (err) throw err;
@@ -571,6 +626,8 @@ function getCritical(recordType, recordValue) {
       return true;
   }
 }
+
+
 
 
 
