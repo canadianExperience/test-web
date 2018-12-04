@@ -23,7 +23,8 @@ server.use(bodyParser.urlencoded({ extended: true }));
 var url = process.env.MONGOLAB_URI_MEDICAL;
 console.log('MONGOLAB_URI_MEDICAL=' + url);
 
-server.set("port", PORT);
+//server.set("port", PORT);
+server.set('port', PORT);
 
 server.listen(server.get("port"), function () {
   console.log('Server %s listening at %s', HOST, PORT)
@@ -404,7 +405,8 @@ server.delete('/patients/all', function (req, res, next) {
       dbo.collection("records").deleteMany({}, function (err, res3) {
         if (err) throw err;
         console.log("records deleted");
-        res.status(201).send("deleted");
+        //res.status(201).send("deleted");
+        res.status(200).send({'result':'deleted'});
         db.close();
       });
     });
@@ -420,7 +422,8 @@ server.delete('/doctors/all', function (req, res, next) {
       dbo.collection("doctors").deleteMany({}, function (err, res3) {
         if (err) throw err;
         console.log("doctors deleted");
-        res.status(201).send("deleted");
+        //res.status(201).send("deleted");
+        res.status(200).send({'result':'deleted'});
         db.close();
       });
   })
@@ -443,7 +446,8 @@ server.delete('/patients/:id/recordType/:recordType', function (req, res, next) 
     dbo.collection("records").deleteMany(query, function (err, res2) {
       if (err) throw err;
       console.log("record deleted");
-      res.status(201).send("deleted");
+      //res.status(201).send("deleted");
+      res.status(200).send({'result':'deleted'});
       db.close();
     });
   })
@@ -462,7 +466,30 @@ server.delete('/patients/:id', function (req, res, next) {
     dbo.collection("patients").deleteOne(query, function (err, res2) {
       if (err) throw err;
       console.log("patient deleted");
-      res.status(201).send("deleted");
+      //res.set('Content-Type', 'text/plain');
+      res.status(200).send({'result':'deleted'});
+      //res.status(200).send("deleted");
+      db.close();
+    });
+  })
+})
+
+//Delete a single doctor by doctor id
+
+server.delete('/doctors/:id', function (req, res, next) {
+  MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
+    if (err) throw err;
+    var dbo = db.db("medical");
+    var name = '_id';
+    var value = ObjectId(req.params.id);
+    var query = {};
+    query[name] = value;
+    dbo.collection("doctors").deleteOne(query, function (err, res2) {
+      if (err) throw err;
+      console.log("doctor deleted");
+      //res.set('Content-Type', 'text/plain');
+      res.status(200).send({'result':'deleted'});
+      //res.status(200).send("deleted");
       db.close();
     });
   })
@@ -481,7 +508,9 @@ server.delete('/patients/:id/records', function (req, res, next) {
     dbo.collection("records").deleteMany(query, function (err, res2) {
       if (err) throw err;
       console.log("records deleted");
-      res.status(201).send("deleted");
+      res.set('Content-Type', 'text/plain');
+      //res.status(200).send("deleted");
+      res.status(200).send({'result':'deleted'});
       db.close();
     });
   })
@@ -501,7 +530,7 @@ server.delete('/records/:id', function (req, res, next) {
     dbo.collection("records").deleteOne(query, function (err, res2) {
       if (err) throw err;
       console.log("record deleted");
-      res.status(201).send("deleted");
+      res.status(200).send({'result':'deleted'});
       db.close();
     });
   })
@@ -592,6 +621,67 @@ server.put('/records/:id',
       });
     })
   })
+
+
+  server.put('/doctors/:id',
+[
+  check('doctor_firstName').isAlpha().isLength({ min: 2 }).withMessage('doctor_firstName must be at least 2 chars long and contain letters only'),
+  check('doctor_lastName').isAlpha().isLength({ min: 2 }).withMessage('doctor_lastName must be at least 2 chars long and contain letters only'),
+  check('doctor_occupation').isAlpha().isLength({ min: 2 }).withMessage('doctor_occupation must be at least 2 chars long and contain letters only'),
+  check('doctor_e_mail').isLength({ min: 2 }).withMessage('doctor_e_mail must be at least 2 chars long'),
+  check('doctor_phoneNumber').isLength({ min: 2 }).withMessage('doctor_phoneNumber must be at least 2 chars long'),
+  check('doctor_laboratoryName').isLength({ min: 2 }).withMessage('doctor_laboratoryName must be at least 2 chars long'),
+  check('doctor_login').isLength({ min: 2 }).withMessage('doctor_login must be at least 2 chars long'),
+  check('doctor_password').isLength({ min: 2 }).withMessage('doctor_password must be at least 2 chars long')
+],
+function (req, res, next) {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log(errors.array());
+    return res.status(422).json({ errors: errors.array() });
+  }
+  var newDoctor = {
+    doctor_firstName: req.body.doctor_firstName,
+    doctor_lastName: req.body.doctor_lastName,
+    doctor_occupation: req.body.doctor_occupation,
+    doctor_e_mail: req.body.doctor_e_mail, 
+    doctor_phoneNumber: req.body.doctor_phoneNumber,
+    doctor_laboratoryName: req.body.doctor_laboratoryName,
+    doctor_login: req.body.doctor_login,
+    doctor_password:req.body.doctor_password
+  }
+  var myquery = { _id: ObjectId(req.params.id) };
+  var newDoctor_updated = { $set: newDoctor };
+  MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
+    if (err) 
+    {
+      console.log(err);
+      throw err;
+    }
+    var dbo = db.db("medical");
+
+console.log(newDoctor.doctor_login);
+    //dbo.collection("doctors").findOne({doctor_login: newDoctor.doctor_login}, function (err, result) {
+    //  if (err) 
+    //  {
+    //    console.log(err);
+    //    throw err;
+    //  }
+    //  if(result != null){
+    //    res.status(400);
+    //    res.send('Doctor login already exists');
+    //    db.close();
+    //    return;
+    //  }
+      dbo.collection("doctors").updateOne(myquery, newDoctor_updated, function (err, res2) {
+        if (err) throw err;
+        console.log(JSON.stringify(newDoctor));
+        res.status(201).send(newDoctor);
+        db.close();
+      });
+//    });
+  })
+})
 
 function getCritical(recordType, recordValue) {
   console.log(recordType);
