@@ -39,8 +39,7 @@ server.listen(server.get("port"), function () {
   console.log(HOST + ':' + PORT + '/patients/all')
   console.log(HOST + ':' + PORT + '/patients/critical')
 })
-// MongoClient.connect("mongodb://localhost:27017/YourDB", { useNewUrlParser: true })
-//MongoClient.connect('mongodb://user:password@sample.com:port/dbname', { useNewUrlParser: true })
+
 // GET patients in critical conditions and their critical records
 server.get('/patients/critical', function (req, res, next) {
   MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
@@ -150,7 +149,26 @@ server.get('/patients/:id', function (req, res, next) {
   })
 })
 
+// Get a single doctor by id
 
+server.get('/doctors/:id', function (req, res, next) {
+  MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
+    if (err) throw err;
+    var dbo = db.db("medical");
+    var name = '_id';
+    var id = req.params.id;
+    var value = new ObjectId(id);
+    var query = {};
+    query[name] = value;
+    console.log(query);
+    dbo.collection("doctors").findOne(query, function (err, result) {
+      if (err) throw err;
+      console.log(JSON.stringify(result));
+      res.status(200).send(result);
+      db.close();
+    });
+  })
+})
 
 //* Get patient's records by patient id
 
@@ -390,8 +408,6 @@ console.log(newDoctor.doctor_login);
     });
   })
 })
-
-
 
 // Delete all patients and their records
 
@@ -661,25 +677,12 @@ function (req, res, next) {
     var dbo = db.db("medical");
 
 console.log(newDoctor.doctor_login);
-    //dbo.collection("doctors").findOne({doctor_login: newDoctor.doctor_login}, function (err, result) {
-    //  if (err) 
-    //  {
-    //    console.log(err);
-    //    throw err;
-    //  }
-    //  if(result != null){
-    //    res.status(400);
-    //    res.send('Doctor login already exists');
-    //    db.close();
-    //    return;
-    //  }
       dbo.collection("doctors").updateOne(myquery, newDoctor_updated, function (err, res2) {
         if (err) throw err;
         console.log(JSON.stringify(newDoctor));
         res.status(201).send(newDoctor);
         db.close();
       });
-//    });
   })
 })
 

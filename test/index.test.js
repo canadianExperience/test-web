@@ -3,7 +3,7 @@ const chai = require('chai');
 var expect = chai.expect;
 const should = chai.should();
 var chaiHttp = require("chai-http");
-var sinon = require("sinon"); //stubbig, get responce from stub instead of server 
+var sinon = require("sinon"); //stubbing, get responce from stub instead of server 
 const request = require('request');
 //Use to compare objects
 const transform = require('lodash').transform;
