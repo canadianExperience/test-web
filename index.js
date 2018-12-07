@@ -469,6 +469,35 @@ server.delete('/patients/:id/recordType/:recordType', function (req, res, next) 
   })
 })
 
+//Delete a single patient by patient id and all their records
+
+server.delete('/patients/:id/patient/records', function (req, res, next) {
+  MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
+    if (err) throw err;
+    var dbo = db.db("medical");
+    var name = '_id';
+    var value = ObjectId(req.params.id);
+    var query = {};
+    query[name] = value;
+    dbo.collection("patients").deleteOne(query, function (err, res2) {
+      if (err) throw err;
+      console.log("patient deleted");
+      var name = 'patient_id';
+      var value = ObjectId(req.params.id);
+      var query = {};
+      query[name] = value;
+      dbo.collection("records").deleteMany(query, function (err, res2) {
+        if (err) throw err;
+        console.log("records deleted");
+        res.set('Content-Type', 'text/plain');
+        //res.status(200).send("deleted");
+        res.status(200).send({'result':'deleted'});
+        db.close();
+      });
+    });
+  })
+})
+
 //Delete a single patient by patient id
 
 server.delete('/patients/:id', function (req, res, next) {
