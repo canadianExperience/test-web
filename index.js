@@ -205,8 +205,11 @@ server.get('/login/:doctor_login/:doctor_password', function (req, res, next) {
     query[name_password] = value_password;
     dbo.collection("doctors").findOne(query, function (err, result) {
       if (err) throw err;
-      console.log(JSON.stringify(result));
-      res.status(200).send(result);
+      if (result==null) {
+        res.status(400).send({'result':'fail'});
+      } else {
+        res.status(200).send(result);
+      }
       db.close();
     });
   })
@@ -239,7 +242,7 @@ server.post('/patients/:id/recordType/:recordType',
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       console.log(errors.array());
-      return res.status(422).json({ errors: errors.array() });
+      return res.status(406).json({ errors: errors.array() });
     }
     var isCritical = getCritical(req.params.recordType, req.body.recordValue);
     var recordDate = new Date().toISOString();
@@ -322,9 +325,10 @@ server.post('/patients',
     console.log(req.body.patient_gender);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(422).json({ errors: errors.array() });
+      return res.status(406).json({ errors: errors.array() });
     }
     var newPatient = {
+      photo: req.body.photo,
       patient_firstName: req.body.patient_firstName,
       patient_lastName: req.body.patient_lastName,
       patient_dateOfBirth: req.body.patient_dateOfBirth,
@@ -355,7 +359,7 @@ server.post('/doctors',
 [
   check('doctor_firstName').isAlpha().isLength({ min: 2 }).withMessage('doctor_firstName must be at least 2 chars long and contain letters only'),
   check('doctor_lastName').isAlpha().isLength({ min: 2 }).withMessage('doctor_lastName must be at least 2 chars long and contain letters only'),
-  check('doctor_occupation').isAlpha().isLength({ min: 2 }).withMessage('doctor_occupation must be at least 2 chars long and contain letters only'),
+  //check('doctor_occupation').isAlpha().isLength({ min: 2 }).withMessage('doctor_occupation must be at least 2 chars long and contain letters only'),
   check('doctor_e_mail').isLength({ min: 2 }).withMessage('doctor_e_mail must be at least 2 chars long'),
   check('doctor_phoneNumber').isLength({ min: 2 }).withMessage('doctor_phoneNumber must be at least 2 chars long'),
   check('doctor_laboratoryName').isLength({ min: 2 }).withMessage('doctor_laboratoryName must be at least 2 chars long'),
@@ -366,9 +370,10 @@ function (req, res, next) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     console.log(errors.array());
-    return res.status(422).json({ errors: errors.array() });
+    return res.status(406).json({ errors: errors.array() });
   }
   var newDoctor = {
+    photo: req.body.photo,
     doctor_firstName: req.body.doctor_firstName,
     doctor_lastName: req.body.doctor_lastName,
     doctor_occupation: req.body.doctor_occupation,
@@ -394,8 +399,7 @@ console.log(newDoctor.doctor_login);
         throw err;
       }
       if(result != null){
-        res.status(400);
-        res.send('Doctor login already exists');
+        res.status(400).send({'result':'Doctor login already exists'});
         db.close();
         return;
       }
@@ -489,7 +493,7 @@ server.delete('/patients/:id/patient/records', function (req, res, next) {
       dbo.collection("records").deleteMany(query, function (err, res2) {
         if (err) throw err;
         console.log("records deleted");
-        res.set('Content-Type', 'text/plain');
+        //res.set('Content-Type', 'text/plain');
         //res.status(200).send("deleted");
         res.status(200).send({'result':'deleted'});
         db.close();
@@ -600,9 +604,10 @@ server.put('/patients/:id',
   function (req, res, next) {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(422).json({ errors: errors.array() });
+      return res.status(406).json({ errors: errors.array() });
     }
     var newPatient = {
+      photo: req.body.photo,
       patient_firstName: req.body.patient_firstName,
       patient_lastName: req.body.patient_lastName,
       patient_dateOfBirth: req.body.patient_dateOfBirth,
@@ -642,7 +647,7 @@ server.put('/records/:id',
   function (req, res, next) {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(422).json({ errors: errors.array() });
+      return res.status(406).json({ errors: errors.array() });
     }
     var isCritical = getCritical(req.body.recordType, req.body.recordValue);
     var newRecord = {
@@ -672,7 +677,7 @@ server.put('/records/:id',
 [
   check('doctor_firstName').isAlpha().isLength({ min: 2 }).withMessage('doctor_firstName must be at least 2 chars long and contain letters only'),
   check('doctor_lastName').isAlpha().isLength({ min: 2 }).withMessage('doctor_lastName must be at least 2 chars long and contain letters only'),
-  check('doctor_occupation').isAlpha().isLength({ min: 2 }).withMessage('doctor_occupation must be at least 2 chars long and contain letters only'),
+  //check('doctor_occupation').isAlpha().isLength({ min: 2 }).withMessage('doctor_occupation must be at least 2 chars long and contain letters only'),
   check('doctor_e_mail').isLength({ min: 2 }).withMessage('doctor_e_mail must be at least 2 chars long'),
   check('doctor_phoneNumber').isLength({ min: 2 }).withMessage('doctor_phoneNumber must be at least 2 chars long'),
   check('doctor_laboratoryName').isLength({ min: 2 }).withMessage('doctor_laboratoryName must be at least 2 chars long'),
@@ -683,9 +688,10 @@ function (req, res, next) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     console.log(errors.array());
-    return res.status(422).json({ errors: errors.array() });
+    return res.status(406).json({ errors: errors.array() });
   }
   var newDoctor = {
+    photo: req.body.photo,
     doctor_firstName: req.body.doctor_firstName,
     doctor_lastName: req.body.doctor_lastName,
     doctor_occupation: req.body.doctor_occupation,
