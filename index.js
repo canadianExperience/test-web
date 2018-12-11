@@ -44,7 +44,7 @@ server.listen(server.get("port"), function () {
 server.get('/patients/critical', function (req, res, next) {
   MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
     if (err) throw err;
-    var dbo = db.db("medical");
+    var dbo = db.db("medical-web");
     dbo.collection("patients").aggregate([{
       $lookup: {
         from: 'records',
@@ -81,7 +81,7 @@ server.get('/patients/critical', function (req, res, next) {
 server.get('/patients/doctor/:id', function (req, res, next) {
   MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
     if (err) throw err;
-    var dbo = db.db("medical");
+    var dbo = db.db("medical-web");
     var name = 'patient_doctorID';
     var id = req.params.id;
     var value = id;
@@ -102,8 +102,11 @@ server.get('/patients/doctor/:id', function (req, res, next) {
 server.get('/patients', function (req, res, next) {
   console.log("GET!!!!!!!!!!!!!");
   MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
-    if (err) throw err;
-    var dbo = db.db("medical");
+    if (err) {
+      console.log(err);
+      throw err;
+    }
+    var dbo = db.db("medical-web");
     dbo.collection("patients").find().toArray(function (err, result) {
       if (err) throw err;
       console.log(JSON.stringify(result));
@@ -118,7 +121,7 @@ server.get('/patients', function (req, res, next) {
 server.get('/doctors', function (req, res, next) {
   MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
     if (err) throw err;
-    var dbo = db.db("medical");
+    var dbo = db.db("medical-web");
     dbo.collection("doctors").find().toArray(function (err, result) {
       if (err) throw err;
       console.log(JSON.stringify(result));
@@ -133,7 +136,7 @@ server.get('/doctors', function (req, res, next) {
 server.get('/patients/:id', function (req, res, next) {
   MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
     if (err) throw err;
-    var dbo = db.db("medical");
+    var dbo = db.db("medical-web");
     var name = '_id';
     var id = req.params.id;
     var value = new ObjectId(id);
@@ -154,7 +157,7 @@ server.get('/patients/:id', function (req, res, next) {
 server.get('/doctors/:id', function (req, res, next) {
   MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
     if (err) throw err;
-    var dbo = db.db("medical");
+    var dbo = db.db("medical-web");
     var name = '_id';
     var id = req.params.id;
     var value = new ObjectId(id);
@@ -175,7 +178,7 @@ server.get('/doctors/:id', function (req, res, next) {
 server.get('/patients/:id/records', function (req, res, next) {
   MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
     if (err) throw err;
-    var dbo = db.db("medical");
+    var dbo = db.db("medical-web");
     var name = 'patient_id';
     var id = req.params.id;
     var value = new ObjectId(id);
@@ -195,7 +198,7 @@ server.get('/patients/:id/records', function (req, res, next) {
 server.get('/login/:doctor_login/:doctor_password', function (req, res, next) {
   MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
     if (err) throw err;
-    var dbo = db.db("medical");
+    var dbo = db.db("medical-web");
     var name_login = 'doctor_login';
     var name_password = 'doctor_password';
     var value_login = req.params.doctor_login;
@@ -220,7 +223,7 @@ server.get('/login/:doctor_login/:doctor_password', function (req, res, next) {
 server.get('/records', function (req, res, next) {
   MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
     if (err) throw err;
-    var dbo = db.db("medical");
+    var dbo = db.db("medical-web");
     dbo.collection("records").find().toArray(function (err, result) {
       if (err) throw err;
       console.log(JSON.stringify(result));
@@ -229,6 +232,7 @@ server.get('/records', function (req, res, next) {
     });
   })
 })
+
 
 //* POST - create new record for a patient by patient id and record type
 
@@ -266,7 +270,7 @@ server.post('/patients/:id/recordType/:recordType',
         console.log(err);
         throw err;
       }
-      var dbo = db.db("medical");
+      var dbo = db.db("medical-web");
       dbo.collection("records").insertOne(newRecord, function (err, res2) {
         if (err) 
         {
@@ -339,11 +343,12 @@ server.post('/patients',
       patient_postalCode: req.body.patient_postalCode,
       patient_e_mail: req.body.patient_e_mail,
       patient_phoneNumber: req.body.patient_phoneNumber,
-      patient_doctorID: req.body.patient_doctorID
+      patient_doctorID: req.body.patient_doctorID,
+      patient_isCritical: req.body.patient_isCritical
     }
     MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
       if (err) throw err;
-      var dbo = db.db("medical");
+      var dbo = db.db("medical-web");
       dbo.collection("patients").insertOne(newPatient, function (err, res2) {
         if (err) throw err;
         console.log(JSON.stringify(newPatient));
@@ -389,7 +394,7 @@ function (req, res, next) {
       console.log(err);
       throw err;
     }
-    var dbo = db.db("medical");
+    var dbo = db.db("medical-web");
 
 console.log(newDoctor.doctor_login);
     dbo.collection("doctors").findOne({doctor_login: newDoctor.doctor_login}, function (err, result) {
@@ -418,7 +423,7 @@ console.log(newDoctor.doctor_login);
 server.delete('/patients/all', function (req, res, next) {
   MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
     if (err) throw err;
-    var dbo = db.db("medical");
+    var dbo = db.db("medical-web");
     dbo.collection("patients").deleteMany({}, function (err, res2) {
       if (err) throw err;
       console.log("patients deleted");
@@ -438,7 +443,7 @@ server.delete('/patients/all', function (req, res, next) {
 server.delete('/doctors/all', function (req, res, next) {
   MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
     if (err) throw err;
-    var dbo = db.db("medical");
+    var dbo = db.db("medical-web");
       dbo.collection("doctors").deleteMany({}, function (err, res3) {
         if (err) throw err;
         console.log("doctors deleted");
@@ -455,7 +460,7 @@ server.delete('/doctors/all', function (req, res, next) {
 server.delete('/patients/:id/recordType/:recordType', function (req, res, next) {
   MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
     if (err) throw err;
-    var dbo = db.db("medical");
+    var dbo = db.db("medical-web");
     var name1 = 'patient_id';
     var value1 = ObjectId(req.params.id);
     var name2 = 'recordType';
@@ -478,7 +483,7 @@ server.delete('/patients/:id/recordType/:recordType', function (req, res, next) 
 server.delete('/patients/:id/patient/records', function (req, res, next) {
   MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
     if (err) throw err;
-    var dbo = db.db("medical");
+    var dbo = db.db("medical-web");
     var name = '_id';
     var value = ObjectId(req.params.id);
     var query = {};
@@ -507,7 +512,7 @@ server.delete('/patients/:id/patient/records', function (req, res, next) {
 server.delete('/patients/:id', function (req, res, next) {
   MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
     if (err) throw err;
-    var dbo = db.db("medical");
+    var dbo = db.db("medical-web");
     var name = '_id';
     var value = ObjectId(req.params.id);
     var query = {};
@@ -528,7 +533,7 @@ server.delete('/patients/:id', function (req, res, next) {
 server.delete('/doctors/:id', function (req, res, next) {
   MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
     if (err) throw err;
-    var dbo = db.db("medical");
+    var dbo = db.db("medical-web");
     var name = '_id';
     var value = ObjectId(req.params.id);
     var query = {};
@@ -549,7 +554,7 @@ server.delete('/doctors/:id', function (req, res, next) {
 server.delete('/patients/:id/records', function (req, res, next) {
   MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
     if (err) throw err;
-    var dbo = db.db("medical");
+    var dbo = db.db("medical-web");
     var name = 'patient_id';
     var value = ObjectId(req.params.id);
     var query = {};
@@ -570,7 +575,7 @@ server.delete('/patients/:id/records', function (req, res, next) {
 server.delete('/records/:id', function (req, res, next) {
   MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
     if (err) throw err;
-    var dbo = db.db("medical");
+    var dbo = db.db("medical-web");
     var name = '_id';
     var value = ObjectId(req.params.id);
     var query = {};
@@ -586,6 +591,38 @@ server.delete('/records/:id', function (req, res, next) {
 })
 
 // Update a patient by their id
+
+//Set patient isCritical
+server.put('/patients/:id/:isCritical',
+  function (req, res, next) {
+    console.log("START PUT RECORD__________________________");
+    var isCritical = req.params.isCritical;
+    var newPatient = {
+      patient_id: ObjectId(req.params.id),
+      isCritical: isCritical
+    }
+    console.log("------------------------- " + isCritical);
+    var newPatientJSON = JSON.stringify(newPatient);
+    console.log(newPatientJSON);
+    MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
+      if (err) 
+      {
+        console.log(err);
+        throw err;
+      }
+      var dbo = db.db("medical-web");
+      var myquery = { _id: ObjectId(req.params.id) };
+      var newPatient_updated = { $set: newPatient };
+      dbo.collection("patients").updateOne(myquery, newPatient_updated, function (err, res2) {
+        if (err) throw err;
+        console.log("patient updated");
+        console.log(JSON.stringify(newPatient));
+        res2.status(200).send({'result':'updated'});
+        db.close();
+      });
+  });
+})
+
 
 server.put('/patients/:id',
 [
@@ -622,7 +659,7 @@ server.put('/patients/:id',
     }
     MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
       if (err) throw err;
-      var dbo = db.db("medical");
+      var dbo = db.db("medical-web");
       var myquery = { _id: ObjectId(req.params.id) };
       var newPatient_updated = { $set: newPatient };
       dbo.collection("patients").updateOne(myquery, newPatient_updated, function (err, res2) {
@@ -659,7 +696,7 @@ server.put('/records/:id',
     }
     MongoClient.connect(url, { useNewUrlParser: true }, function (err, db) {
       if (err) throw err;
-      var dbo = db.db("medical");
+      var dbo = db.db("medical-web");
       var myquery = { _id: ObjectId(req.params.id) };
       var newRecord_updated = { $set: newRecord };
       dbo.collection("records").updateOne(myquery, newRecord_updated, function (err, res2) {
@@ -709,7 +746,7 @@ function (req, res, next) {
       console.log(err);
       throw err;
     }
-    var dbo = db.db("medical");
+    var dbo = db.db("medical-web");
 
 console.log(newDoctor.doctor_login);
       dbo.collection("doctors").updateOne(myquery, newDoctor_updated, function (err, res2) {
